@@ -1,0 +1,212 @@
+openapi: 3.0.0
+info:
+  title: ESP32 Motor Control API
+  description: API for controlling DC motors connected to an ESP32 via L298D driver
+  version: 1.0.0
+
+servers:
+  - url: http://{esp32_ip}
+    description: ESP32 Web Server
+    variables:
+      esp32_ip:
+        default: 192.168.1.100
+        description: IP address of your ESP32 device
+
+paths:
+  /api/motors:
+    get:
+      summary: Get status of all motors
+      description: Returns the current speed settings for all motors
+      operationId: getMotorsStatus
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MotorStatus'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/motors/{motorName}:
+    post:
+      summary: Set motor speed
+      description: Sets the speed of a specific motor
+      operationId: setMotorSpeed
+      parameters:
+        - name: motorName
+          in: path
+          description: Name of the motor to control
+          required: true
+          schema:
+            type: string
+            enum: [linearMotor, vibeMotor]
+      requestBody:
+        description: Motor speed setting
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeedSetting'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Motor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Update motor speed
+      description: Updates the speed of a specific motor
+      operationId: updateMotorSpeed
+      parameters:
+        - name: motorName
+          in: path
+          description: Name of the motor to control
+          required: true
+          schema:
+            type: string
+            enum: [linearMotor, vibeMotor]
+      requestBody:
+        description: Motor speed setting
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeedSetting'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Motor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/motors/stop:
+    post:
+      summary: Stop all motors
+      description: Immediately stops all motors
+      operationId: stopAllMotors
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StopResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    MotorStatus:
+      type: object
+      properties:
+        motors:
+          type: object
+          properties:
+            linearMotor:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: Current speed of linear motor as percentage
+              example: 25
+            vibeMotor:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: Current speed of vibration motor as percentage
+              example: 50
+          required:
+            - linearMotor
+            - vibeMotor
+        status:
+          type: string
+          example: "running"
+      required:
+        - motors
+        - status
+    
+    SpeedSetting:
+      type: object
+      properties:
+        speed:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Motor speed as percentage (0-100)
+          example: 75
+      required:
+        - speed
+    
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        motor:
+          type: string
+          example: "linearMotor"
+        speed:
+          type: number
+          format: float
+          example: 75
+      required:
+        - status
+        - motor
+        - speed
+    
+    StopResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "All motors stopped"
+      required:
+        - status
+    
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Invalid speed value"
+      required:
+        - error
